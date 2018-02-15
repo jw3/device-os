@@ -33,7 +33,7 @@
 /* Include for debug capabilty */
 #define MDM_DEBUG
 
-#define USE_USART3_HARDWARE_FLOW_CONTROL_RTS_CTS 1
+#define USE_USART3_HARDWARE_FLOW_CONTROL_RTS_CTS 0
 
 /** basic modem parser class
 */

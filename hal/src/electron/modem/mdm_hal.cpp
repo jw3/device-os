@@ -346,14 +346,20 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb /* = NULL*/,
                     }
                 } else {
                     // +CREG|CGREG: <n>,<stat>[,<lac>,<ci>[,AcT[,<rac>]]] // reply to AT+CREG|AT+CGREG
-                    // +CREG|CGREG: <stat>[,<lac>,<ci>[,AcT[,<rac>]]]     // URC
+                    // +CREG|CGREG|CEREG: <stat>[,<lac>,<ci>[,AcT[,<rac>]]]     // URC
                     b = (int)0xFFFF; c = (int)0xFFFFFFFF; d = -1;
                     r = sscanf(cmd, "%s %*d,%d,\"%x\",\"%x\",%d",s,&a,&b,&c,&d);
                     if (r <= 1)
                         r = sscanf(cmd, "%s %d,\"%x\",\"%x\",%d",s,&a,&b,&c,&d);
                     if (r >= 2) {
-                        Reg *reg = !strcmp(s, "CREG:")  ? &_net.csd :
-                                   !strcmp(s, "CGREG:") ? &_net.psd : NULL;
+                        Reg* reg = nullptr;
+                        if (strcmp(s, "CREG:") == 0) {
+                            reg = &_net.csd;
+                        } else if (strcmp(s, "CGREG:") == 0) {
+                            reg = &_net.psd;
+                        } else if (strcmp(s, "CEREG:") == 0) {
+                            reg = &_net.eps;
+                        }
                         if (reg) {
                             // network status
                             if      (a == 0) *reg = REG_NONE;     // 0: not registered, home network
@@ -473,7 +479,7 @@ void MDMParser::reset(void)
 {
     MDM_INFO("[ Modem reset ]");
     HAL_GPIO_Write(RESET_UC, 0);
-    HAL_Delay_Milliseconds(100);
+    HAL_Delay_Milliseconds(10000); // SARA-R4
     HAL_GPIO_Write(RESET_UC, 1);
 }
 
@@ -522,11 +528,12 @@ bool MDMParser::_powerOn(void)
 
     int i = 10;
     while (i--) {
+/*
         // SARA-U2/LISA-U2 50..80us
         HAL_GPIO_Write(PWR_UC, 0); HAL_Delay_Milliseconds(50);
         HAL_GPIO_Write(PWR_UC, 1); HAL_Delay_Milliseconds(10);
-
-        // SARA-G35 >5ms, LISA-C2 > 150ms, LEON-G2 >5ms
+*/
+        // SARA-G35 >5ms, LISA-C2 > 150ms, LEON-G2 >5ms, SARA-R4 >= 150
         HAL_GPIO_Write(PWR_UC, 0); HAL_Delay_Milliseconds(150);
         HAL_GPIO_Write(PWR_UC, 1); HAL_Delay_Milliseconds(100);
 
@@ -712,6 +719,7 @@ bool MDMParser::init(DevStatus* status)
             _dev.lpm = LPM_ACTIVE;
         }
     }
+/*
     // Setup SMS in text mode
     sendFormated("AT+CMGF=1\r\n");
     if (RESP_OK != waitFinalResp())
@@ -720,6 +728,7 @@ bool MDMParser::init(DevStatus* status)
     sendFormated("AT+CNMI=2,1\r\n");
     if (RESP_OK != waitFinalResp())
         goto failure;
+*/
     // Request IMSI (International Mobile Subscriber Identification)
     sendFormated("AT+CIMI\r\n");
     if (RESP_OK != waitFinalResp(_cbString, _dev.imsi))
@@ -730,7 +739,6 @@ bool MDMParser::init(DevStatus* status)
     return true;
 failure:
     UNLOCK();
-
     return false;
 }
 
@@ -823,6 +831,14 @@ bool MDMParser::registerNet(NetStatus* status /*= NULL*/, system_tick_t timeout_
         // Check to see if we are already connected. If so don't issue these
         // commands as they will knock us off the cellular network.
         if (checkNetStatus() == false) {
+/*
+            sendFormated("AT+COPS=2\r\n");
+            if (RESP_OK != waitFinalResp(nullptr, nullptr, 60000))
+                goto failure;
+            sendFormated("AT+COPS=0\r\n");
+            if (RESP_OK != waitFinalResp(nullptr, nullptr, 60000))
+                goto failure;
+*/
             // setup the GPRS network registration URC (Unsolicited Response Code)
             // 0: (default value and factory-programmed value): network registration URC disabled
             // 1: network registration URC enabled
@@ -830,6 +846,7 @@ bool MDMParser::registerNet(NetStatus* status /*= NULL*/, system_tick_t timeout_
             sendFormated("AT+CGREG=2\r\n");
             if (RESP_OK != waitFinalResp())
                 goto failure;
+/*
             // setup the network registration URC (Unsolicited Response Code)
             // 0: (default value and factory-programmed value): network registration URC disabled
             // 1: network registration URC enabled
@@ -837,6 +854,11 @@ bool MDMParser::registerNet(NetStatus* status /*= NULL*/, system_tick_t timeout_
             sendFormated("AT+CREG=2\r\n");
             if (RESP_OK != waitFinalResp())
                 goto failure;
+*/
+            sendFormated("AT+CEREG=2\r\n");
+            if (RESP_OK != waitFinalResp())
+                goto failure;
+
             // Now check every 15 seconds for 5 minutes to see if we're connected to the tower (GSM and GPRS)
             system_tick_t start = HAL_Timer_Get_Milli_Seconds();
             while (!checkNetStatus(status) && !TIMEOUT(start, timeout_ms) && !_cancel_all_operations) {
@@ -846,13 +868,14 @@ bool MDMParser::registerNet(NetStatus* status /*= NULL*/, system_tick_t timeout_
             }
             if (_net.csd == REG_DENIED) MDM_ERROR("CSD Registration Denied\r\n");
             if (_net.psd == REG_DENIED) MDM_ERROR("PSD Registration Denied\r\n");
+            if (_net.eps == REG_DENIED) MDM_ERROR("EPS Registration Denied\r\n");
             // if (_net.csd == REG_DENIED || _net.psd == REG_DENIED) {
             //     sendFormated("AT+CEER\r\n");
             //     waitFinalResp();
             // }
         }
         UNLOCK();
-        return REG_OK(_net.csd) && REG_OK(_net.psd);
+        return /* REG_OK(_net.csd) && */  REG_OK(_net.psd) && REG_OK(_net.eps);
     }
 failure:
     UNLOCK();
@@ -866,16 +889,20 @@ bool MDMParser::checkNetStatus(NetStatus* status /*= NULL*/)
     memset(&_net, 0, sizeof(_net));
     _net.lac = 0xFFFF;
     _net.ci = 0xFFFFFFFF;
-
+/*
     // check registration
     sendFormated("AT+CREG?\r\n");
     waitFinalResp();     // don't fail as service could be not subscribed
-
+*/
     // check PSD registration
     sendFormated("AT+CGREG?\r\n");
     waitFinalResp(); // don't fail as service could be not subscribed
 
-    if (REG_OK(_net.csd) || REG_OK(_net.psd))
+    // check EPS registration
+    sendFormated("AT+CEREG?\r\n");
+    waitFinalResp(); // don't fail as service could be not subscribed
+
+    if (/*REG_OK(_net.csd) ||*/  REG_OK(_net.psd) ||  REG_OK(_net.eps))
     {
         sendFormated("AT+COPS?\r\n");
         if (RESP_OK != waitFinalResp(_cbCOPS, &_net))
@@ -894,7 +921,7 @@ bool MDMParser::checkNetStatus(NetStatus* status /*= NULL*/)
         memcpy(status, &_net, sizeof(NetStatus));
     }
     // don't return true until fully registered
-    ok = REG_OK(_net.csd) && REG_OK(_net.psd);
+    ok = /*REG_OK(_net.csd) && */ REG_OK(_net.psd) &&  REG_OK(_net.eps);
     UNLOCK();
     return ok;
 failure:

@@ -295,7 +295,7 @@ void PowerManager::handleStateChange(battery_state_t from, battery_state_t to, b
   g_batteryState = to;
 
   system_notify_event(battery_state, (int)g_batteryState);
-
+/*
 #if defined(DEBUG_BUILD)
   static const char* states[] = {
     "UNKNOWN",
@@ -308,6 +308,7 @@ void PowerManager::handleStateChange(battery_state_t from, battery_state_t to, b
   };
   LOG_DEBUG(TRACE, "Battery state %s -> %s", states[from], states[to]);
 #endif // defined(DEBUG_BUILD)
+*/
 }
 
 battery_state_t PowerManager::handlePossibleFault(battery_state_t from, battery_state_t to) {

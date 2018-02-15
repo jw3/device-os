@@ -53,6 +53,7 @@ typedef enum { ACT_UNKNOWN, ACT_GSM, ACT_EDGE, ACT_UTRAN, ACT_CDMA } AcT;
 typedef struct {
     Reg csd;        //!< CSD Registration Status (Circuit Switched Data)
     Reg psd;        //!< PSD Registration status (Packet Switched Data)
+    Reg eps;
     AcT act;        //!< Access Technology
     int rssi;       //!< Received Signal Strength Indication (in dBm, range -113..-53)
     int qual;       //!< In UMTS RAT indicates the Energy per Chip/Noise ratio in dB levels
