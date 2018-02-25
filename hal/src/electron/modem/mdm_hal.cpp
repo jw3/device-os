@@ -368,17 +368,21 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb /* = NULL*/,
                             else if (a == 3) *reg = REG_DENIED;   // 3: registration denied
                             else if (a == 4) *reg = REG_UNKNOWN;  // 4: unknown
                             else if (a == 5) *reg = REG_ROAMING;  // 5: registered, roaming
+                            else if (a == 6) *reg = REG_HOME;     // 6: registered, sms only, home
                             if ((r >= 3) && (b != (int)0xFFFF))      _net.lac = b; // location area code
                             if ((r >= 4) && (c != (int)0xFFFFFFFF))  _net.ci  = c; // cell ID
                             // access technology
                             if (r >= 5) {
-                                if      (d == 0) _net.act = ACT_GSM;      // 0: GSM
-                                else if (d == 1) _net.act = ACT_GSM;      // 1: GSM COMPACT
-                                else if (d == 2) _net.act = ACT_UTRAN;    // 2: UTRAN
-                                else if (d == 3) _net.act = ACT_EDGE;     // 3: GSM with EDGE availability
-                                else if (d == 4) _net.act = ACT_UTRAN;    // 4: UTRAN with HSDPA availability
-                                else if (d == 5) _net.act = ACT_UTRAN;    // 5: UTRAN with HSUPA availability
-                                else if (d == 6) _net.act = ACT_UTRAN;    // 6: UTRAN with HSDPA and HSUPA availability
+                                if      (d == 0) _net.act = ACT_GSM;         // 0: GSM
+                                else if (d == 1) _net.act = ACT_GSM;         // 1: GSM COMPACT
+                                else if (d == 2) _net.act = ACT_UTRAN;       // 2: UTRAN
+                                else if (d == 3) _net.act = ACT_EDGE;        // 3: GSM with EDGE availability
+                                else if (d == 4) _net.act = ACT_UTRAN;       // 4: UTRAN with HSDPA availability
+                                else if (d == 5) _net.act = ACT_UTRAN;       // 5: UTRAN with HSUPA availability
+                                else if (d == 6) _net.act = ACT_UTRAN;       // 6: UTRAN with HSDPA and HSUPA availability
+                                else if (d == 7) _net.act = ACT_LTE;         // 7: LTE
+                                else if (d == 8) _net.act = ACT_LTE_CAT_M1;  // 8: LTE CAT-M1
+                                else if (d == 9) _net.act = ACT_LTE_CAT_NB1; // 9: LTE CAT-NB1
                             }
                         }
                     }
@@ -794,6 +798,8 @@ int MDMParser::_cbATI(int type, const char* buf, int len, Dev* dev)
         else if (strstr(buf, "SARA-U260")) *dev = DEV_SARA_U260;
         else if (strstr(buf, "SARA-U270")) *dev = DEV_SARA_U270;
         else if (strstr(buf, "LEON-G200")) *dev = DEV_LEON_G200;
+        else if (strstr(buf, "SARA-R410M-01B")) *dev = DEV_SARA_R410M_01B;
+        else if (strstr(buf, "SARA-R410M-02B")) *dev = DEV_SARA_R410M_02B;
     }
     return WAIT;
 }
@@ -1112,6 +1118,7 @@ int MDMParser::_cbBANDSEL(int type, const char* buf, int len, MDM_BandSelect* da
     return WAIT;
 }
 
+/*
 int MDMParser::_cbCOPS(int type, const char* buf, int len, NetStatus* status)
 {
     if ((type == TYPE_PLUS) && status){
@@ -1120,6 +1127,26 @@ int MDMParser::_cbCOPS(int type, const char* buf, int len, NetStatus* status)
         if (sscanf(buf, "\r\n+COPS: %*d,%*d,\"%[^\"]\",%d",status->opr,&act) >= 1) {
             if      (act == 0) status->act = ACT_GSM;      // 0: GSM,
             else if (act == 2) status->act = ACT_UTRAN;    // 2: UTRAN
+        }
+    }
+    return WAIT;
+}
+*/
+int MDMParser::_cbCOPS(int type, const char* buf, int len, NetStatus* status)
+{
+    if ((type == TYPE_PLUS) && status){
+        int act = 99;
+        int mode = 99;
+        // +COPS: <mode>[,<format>,<oper>[,<AcT>]]
+        if (sscanf(buf, "\r\n+COPS: %d,%*d,\"%[^\"]\",%d",&mode,status->opr,&act) >= 1) {
+            if      (act == 0) status->act = ACT_GSM;         // 0: GSM,
+            else if (act == 2) status->act = ACT_UTRAN;       // 2: UTRAN
+            else if (act == 7) status->act = ACT_LTE;         // 7: LTE
+            else if (act == 8) status->act = ACT_LTE_CAT_M1;  // 8: LTE CAT-M1
+            else if (act == 9) status->act = ACT_LTE_CAT_NB1; // 9: LTE CAT-NB1
+            if      (mode == 0) status->regStatus = COPS_AUTOMATIC_REG;
+            else if (mode == 1) status->regStatus = COPS_MANUAL_REG;
+            else if (mode == 2) status->regStatus = COPS_DISABLED_REG;
         }
     }
     return WAIT;

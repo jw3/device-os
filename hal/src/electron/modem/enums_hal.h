@@ -27,11 +27,13 @@
 // ----------------------------------------------------------------
 //! MT Device Types
 typedef enum { DEV_UNKNOWN, DEV_SARA_G350, DEV_LISA_U200, DEV_LISA_C200,
-               DEV_SARA_U260, DEV_SARA_U270, DEV_LEON_G200 } Dev;
+               DEV_SARA_U260, DEV_SARA_U270, DEV_LEON_G200, DEV_SARA_R410M_01B, DEV_SARA_R410M_02B } Dev;
 //! SIM Status
 typedef enum { SIM_UNKNOWN, SIM_MISSING, SIM_PIN, SIM_READY } Sim;
 //! SIM Status
 typedef enum { LPM_DISABLED, LPM_ENABLED, LPM_ACTIVE } Lpm;
+//! COPS status
+typedef enum { COPS_UNKOWN, COPS_AUTOMATIC_REG, COPS_MANUAL_REG, COPS_DISABLED_REG } CopsMode;
 //! Device status
 typedef struct {
     Dev dev;            //!< Device Type
@@ -48,7 +50,7 @@ typedef struct {
 //! Registration Status
 typedef enum { REG_UNKNOWN, REG_DENIED, REG_NONE, REG_HOME, REG_ROAMING } Reg;
 //! Access Technology
-typedef enum { ACT_UNKNOWN, ACT_GSM, ACT_EDGE, ACT_UTRAN, ACT_CDMA } AcT;
+typedef enum { ACT_UNKNOWN, ACT_GSM, ACT_EDGE, ACT_UTRAN, ACT_CDMA, ACT_LTE, ACT_LTE_CAT_M1, ACT_LTE_CAT_NB1 } AcT;
 //! Network Status
 typedef struct {
     Reg csd;        //!< CSD Registration Status (Circuit Switched Data)
@@ -77,6 +79,7 @@ typedef struct {
     char num[32];   //!< Mobile Directory Number
     unsigned short lac;  //!< location area code in hexadecimal format (2 bytes in hex)
     unsigned int ci;     //!< Cell ID in hexadecimal format (2 to 4 bytes in hex)
+    CopsMode regStatus;  //!< Cops mode
 } NetStatus;
 
 #ifdef __cplusplus
