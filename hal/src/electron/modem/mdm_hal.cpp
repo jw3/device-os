@@ -1311,14 +1311,16 @@ MDM_IP MDMParser::join(const char* apn /*= NULL*/, const char* username /*= NULL
     if (_init && _pwr) {
         MDM_INFO("\r\n[ Modem::join ] = = = = = = = = = = = = = = = =");
         _ip = NOIP;
+/*
         int a = 0;
         bool force = false; // If we are already connected, don't force a reconnect.
+*/
 
         // perform GPRS attach
         sendFormated("AT+CGATT=1\r\n");
         if (RESP_OK != waitFinalResp(NULL,NULL,3*60*1000))
             goto failure;
-
+/*
         // Check the if the PSD profile is activated (a=1)
         sendFormated("AT+UPSND=" PROFILE ",8\r\n");
         if (RESP_OK != waitFinalResp(_cbUPSND, &a))
@@ -1397,6 +1399,11 @@ MDM_IP MDMParser::join(const char* apn /*= NULL*/, const char* username /*= NULL
         sendFormated("AT+UPSND=" PROFILE ",0\r\n");
         if (RESP_OK != waitFinalResp(_cbUPSND, &_ip))
             goto failure;
+*/
+        // Get local IP address
+        sendFormated("AT+CGPADDR=1\r\n");
+        if (RESP_OK != waitFinalResp(_cbCGPADDR, &_ip))
+            goto failure;
 
         UNLOCK();
         _attached = true;  // GPRS
@@ -1441,6 +1448,17 @@ int MDMParser::_cbUPSND(int type, const char* buf, int len, MDM_IP* ip)
         int a,b,c,d;
         // +UPSND=<profile_id>,<param_tag>[,<dynamic_param_val>]
         if (sscanf(buf, "\r\n+UPSND: " PROFILE ",0,\"" IPSTR "\"", &a,&b,&c,&d) == 4)
+            *ip = IPADR(a,b,c,d);
+    }
+    return WAIT;
+}
+
+int MDMParser::_cbCGPADDR(int type, const char* buf, int len, MDM_IP* ip)
+{
+    if ((type == TYPE_PLUS) && ip) {
+        int a,b,c,d;
+        // +CGPADDR: <cid>,<PDP_addr>
+        if (sscanf(buf, "\r\n+CGPADDR: 1,%d.%d.%d.%d", &a,&b,&c,&d) == 4)
             *ip = IPADR(a,b,c,d);
     }
     return WAIT;

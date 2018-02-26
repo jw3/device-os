@@ -550,6 +550,7 @@ protected:
     static int _cbCMIP(int type, const char* buf, int len, MDM_IP* ip);
     static int _cbUPSND(int type, const char* buf, int len, int* act);
     static int _cbUPSND(int type, const char* buf, int len, MDM_IP* ip);
+    static int _cbCGPADDR(int type, const char* buf, int len, MDM_IP* ip);
     static int _cbUDNSRN(int type, const char* buf, int len, MDM_IP* ip);
     static int _cbUSOCR(int type, const char* buf, int len, int* handle);
     static int _cbUSOCTL(int type, const char* buf, int len, int* handle);
