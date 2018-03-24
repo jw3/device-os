@@ -18,4 +18,13 @@ endif
 
 include $(COMMON_BUILD)/lang-std.mk
 
+ifneq ("$(USER_REMOTE)","")
+ifeq ("$(MODULE)","user")
+$(info ================== Using remote user compilation $(USER_REMOTE) ==================);
+include $(COMMON_BUILD)/module2.mk
+else
 include $(COMMON_BUILD)/module.mk
+endif
+else
+include $(COMMON_BUILD)/module.mk
+endif
