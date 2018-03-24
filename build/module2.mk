@@ -45,39 +45,11 @@ ifneq (,$(LOG_MODULE_CATEGORY))
 CFLAGS += -DLOG_MODULE_CATEGORY="\"$(LOG_MODULE_CATEGORY)\""
 endif
 
-# Adds the sources from the specified library directories
-# v1 libraries include all sources
-LIBCPPSRC += $(call target_files_dirs,$(MODULE_LIBSV1),,*.cpp)
-LIBCSRC += $(call target_files_dirs,$(MODULE_LIBSV1),,*.c)
-
-# v2 libraries only include sources in the "src" dir
-LIBCPPSRC += $(call target_files_dirs,$(MODULE_LIBSV2)/,src/,*.cpp)
-LIBCSRC += $(call target_files_dirs,$(MODULE_LIBSV2)/,src/,*.c)
-
-
-CPPSRC += $(LIBCPPSRC)
-CSRC += $(LIBCSRC)
-
-# add all module libraries as include directories
-INCLUDE_DIRS += $(MODULE_LIBSV1)
-
-# v2 libraries contain their sources under a "src" folder
-INCLUDE_DIRS += $(addsuffix /src,$(MODULE_LIBSV2))
-
 # $(info cppsrc $(CPPSRC))
 # $(info csrc $(CSRC))
 
-
 # Collect all object and dep files
-ALLOBJ += $(addprefix $(BUILD_PATH)/, $(CSRC:.c=.o))
-ALLOBJ += $(addprefix $(BUILD_PATH)/, $(CPPSRC:.cpp=.o))
-ALLOBJ += $(addprefix $(BUILD_PATH)/, $(patsubst $(COMMON_BUILD)/arm/%,%,$(ASRC:.S=.o)))
-
-# $(info allobj $(ALLOBJ))
-
-ALLDEPS += $(addprefix $(BUILD_PATH)/, $(CSRC:.c=.o.d))
-ALLDEPS += $(addprefix $(BUILD_PATH)/, $(CPPSRC:.cpp=.o.d))
-ALLDEPS += $(addprefix $(BUILD_PATH)/, $(patsubst $(COMMON_BUILD)/arm/%,%,$(ASRC:.S=.o.d)))
+ALLOBJ += $(USER_REMOTE)/application.cpp.o
 
 CLOUD_FLASH_URL ?= https://api.spark.io/v1/devices/$(SPARK_CORE_ID)\?access_token=$(SPARK_ACCESS_TOKEN)
 
