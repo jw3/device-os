@@ -64,3 +64,8 @@ docs/doxygen/html/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
+
+.idea
+*.iml
+*.log
+
