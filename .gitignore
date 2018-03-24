@@ -53,3 +53,7 @@ nbproject/
 build/target/
 build/cores/
 hal/soft-ap/.idea/
+
+.idea
+*.iml
+*.log
