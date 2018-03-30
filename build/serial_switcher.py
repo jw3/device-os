@@ -16,6 +16,5 @@ if len(sys.argv) > 2:
 try:
   ser = serial.Serial(portName, baudRate)
   ser.close()
-except SerialException:
-  ser = serial.Serial(portName, neutralBaudRate)
-  ser.close()
+except:
+  print ("exception caught while opening serial port")
