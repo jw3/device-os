@@ -13,10 +13,9 @@ if len(sys.argv) > 1:
 if len(sys.argv) > 2:
   portName = sys.argv[2]
 
-ser = serial.Serial(portName, baudRate)
-ser.close()
-
-ser = serial.Serial(portName, neutralBaudRate)
-ser.close()
-
-
+try:
+  ser = serial.Serial(portName, baudRate)
+  ser.close()
+except SerialException:
+  ser = serial.Serial(portName, neutralBaudRate)
+  ser.close()
